@@ -1,32 +1,61 @@
-from ij import IJ
-from ij.plugin import ChannelSplitter, RGBStackMerge
-from ij.process import LUT
-from java.awt import Color
+from ij import IJ, ImageStack, ImagePlus, CompositeImage
+from ij.plugin import ChannelSplitter
+import os
 
-# Define your custom color map
-color_map = {
-    0: Color.blue,
-    1: Color.green,
-    2: Color.yellow,
-    3: Color.red
-}
-
-# Get the current image
+# Get the open multichannel image
 imp = IJ.getImage()
 
 # Split channels
-channels = ChannelSplitter.split(imp)
-num_channels = len(channels)
+split = ChannelSplitter.split(imp)
 
-# Assign LUTs to each channel
-for i in range(num_channels):
-    c_imp = channels[i]
-    color = color_map.get(i, Color.white)  # Default to white if not mapped
-    lut = LUT(color)
-    c_imp.setLut(lut)
-    c_imp.show()
+# Define custom order:
+# Original channel index → position in composite stack
+# C1 (Red) ← split[3]
+# C2 (Green) ← split[1]
+# C3 (Blue) ← split[0]
+# C4 (Yellow) ← split[2]
+reordered = [split[0], split[1], split[2], split[3]]
+# Create a new stack and ImagePlus
+stack = ImageStack(reordered[0].getWidth(), reordered[0].getHeight())
 
-# Merge channels back together
-merged = RGBStackMerge.mergeChannels(channels, True)
-merged.setTitle("Merged Image")
-merged.show()
+for ch in reordered:
+    stack.addSlice(ch.getProcessor())
+
+# Create new ImagePlus with proper dimensions (X, Y, Channels, Slices, Frames)
+nChannels = len(reordered)
+nSlices = reordered[0].getNSlices()
+nFrames = reordered[0].getNFrames()
+
+merged = ImagePlus("Custom Composite", stack)
+merged.setDimensions(nChannels, nSlices, nFrames)
+
+# Convert to composite, preserving original LUTs
+composite = CompositeImage(merged, CompositeImage.COMPOSITE)
+
+# Copy LUTs from original split images
+for i, ch in enumerate(reordered):
+    composite.setChannelLut(ch.getProcessor().getLut(), i + 1)
+
+composite.show()
+
+# Get the full path to the current image
+info = imp.getOriginalFileInfo()
+if info is not None:
+    original_dir = info.directory
+    original_name = imp.getShortTitle()
+else:
+    # Fallback if originalFileInfo is missing (e.g. image opened from memory)
+    original_dir = IJ.getDirectory("current")
+    original_name = imp.getTitle().replace(".tif", "").replace(".nd2", "")
+
+# Build output directory path using os
+output_dir = os.path.join(original_dir, "Processed_Exports_" + original_name)
+if not os.path.exists(output_dir):
+    os.makedirs(output_dir)
+
+# Build full output file path
+output_path = os.path.join(output_dir, original_name + ".tif")
+
+# Save the final composite image
+IJ.saveAsTiff(composite, output_path)
+

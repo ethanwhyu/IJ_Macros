@@ -17,15 +17,6 @@ color_map = {
     3: "Red"
 }
 
-#def set_channel_brightness(imp, channel_index, min_val, max_val):
-#    channels = ChannelSplitter.split(imp)   # split channels correctly
-#    ip = channels[channel_index].getProcessor()
-#    ip.setMinAndMax(min_val, max_val)
-#    channels[channel_index].setProcessor(ip)
-#    merged = RGBStackMerge.mergeChannels(channels, False)
-#    merged.setTitle(imp.getTitle())
-#    return merged
-
 dc = DirectoryChooser("Choose folder with ND2 files")
 directory = dc.getDirectory()
 
