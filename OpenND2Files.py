@@ -1,6 +1,8 @@
 from ij import IJ, WindowManager
 from java.awt import Frame
 from java.io import File
+from loci.plugins import BF
+from loci.plugins.in import ImporterOptions
 from javax.swing import JFileChooser
 from javax.swing.filechooser import FileNameExtensionFilter
 
@@ -17,7 +19,21 @@ if ret == JFileChooser.APPROVE_OPTION:
 
     if selected_files:
         for file in selected_files:
-            IJ.open(file.getAbsolutePath())
+            path = file.getAbsolutePath()
+
+            options = ImporterOptions()
+            options.setId(path)
+            options.setSplitChannels(False)
+            options.setColorMode(ImporterOptions.COLOR_MODE_DEFAULT)
+            options.setAutoscale(False)
+            options.setOpenAllSeries(False)
+            options.setStackOrder("XYCZT")
+
+            imps = BF.openImagePlus(options)
+
+            # Show all imported image(s) from the current file
+            for imp in imps:
+                imp.show()
         
     else:
         IJ.showMessage("No files were selected.")
