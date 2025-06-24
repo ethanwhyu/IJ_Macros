@@ -1,10 +1,12 @@
+# -*- coding: utf-8 -*-
+
 from ij import IJ, ImagePlus
 from ij.plugin import ChannelSplitter, RGBStackConverter
 #from AddScaleDynamically import AddScaleDynamically
 import math
 import os
 
-def AddScaleDynamically (imp):
+def AddScaleDynamically (imp = IJ.getImage()):
     # Get the currently active image
     imp = IJ.getImage()
 
@@ -45,44 +47,47 @@ def AddScaleDynamically (imp):
 
     # Save as TIFF
     IJ.saveAs(imp, "Tiff", output_path)
-    
-imp = IJ.getImage()
 
-# Copy calibration for later scale bar information
-cal = imp.getCalibration().copy()
+def SavetoRGB (imp = IJ.getImage()):    
 
-# Get save directory from OriginalFileInfo
-file_info = imp.getOriginalFileInfo()
-if file_info is not None and file_info.directory is not None:
-    directory = file_info.directory
-else:
-    directory = os.getcwd() + os.sep
+    # Copy calibration for later scale bar information
+    cal = imp.getCalibration().copy()
 
-filename = imp.getTitle()
+    # Get save directory from OriginalFileInfo
+    file_info = imp.getOriginalFileInfo()
+    if file_info is not None and file_info.directory is not None:
+        directory = file_info.directory
+    else:
+        directory = os.getcwd() + os.sep
 
-# Save merged RGB composite
-merged_copy = imp.duplicate()
-RGBStackConverter.convertToRGB(merged_copy)
-AddScaleDynamically(merged_copy)
-IJ.saveAs(merged_copy, "Tiff", os.path.join(directory, "merged_" + filename))
+    filename = imp.getTitle()
 
-# Split channels
-channels = ChannelSplitter.split(imp)
+    # Save merged RGB composite
+    merged_copy = imp.duplicate()
+    RGBStackConverter.convertToRGB(merged_copy)
+    AddScaleDynamically(merged_copy)
+    IJ.saveAs(merged_copy, "Tiff", os.path.join(directory, "merged_" + filename))
 
-channel_prefixes = {
-    0: "DAPI_",
-    1: "AF488_",
-    2: "AF568_",
-    3: "AF647_"
-}
+    # Split channels
+    channels = ChannelSplitter.split(imp)
 
-for i, ch in enumerate(channels):
-    # Convert single-channel grayscale to RGB by duplicating it to R, G, B
-    ch_stack = ch.getProcessor().convertToByte(True)
-    IJ.run(ch, "RGB Color", "")
-    ch.setCalibration(cal)
-    AddScaleDynamically(ch)
+    channel_prefixes = {
+        0: "DAPI_",
+        1: "AF488_",
+        2: "AF568_",
+        3: "AF647_"
+    }
 
-    prefix = channel_prefixes.get(i, "CH%d_" % (i+1))
-    output_path = os.path.join(directory, prefix + filename)
-    IJ.saveAs(ch, "Tiff", output_path)
+    for i, ch in enumerate(channels):
+        # Convert single-channel grayscale to RGB by duplicating it to R, G, B
+        ch_stack = ch.getProcessor().convertToByte(True)
+        IJ.run(ch, "RGB Color", "")
+        ch.setCalibration(cal)
+        AddScaleDynamically(ch)
+
+        prefix = channel_prefixes.get(i, "CH%d_" % (i+1))
+        output_path = os.path.join(directory, prefix + filename)
+        IJ.saveAs(ch, "Tiff", output_path)
+
+if __name__ == "__main__":
+    SavetoRGB()
