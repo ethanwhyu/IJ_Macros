@@ -5,6 +5,12 @@ import os
 # Get the open multichannel image
 imp = IJ.getImage()
 
+# accept only .nd2 files
+filename = imp.getFileName()
+if not filename.lower().endswith(".nd2"):
+    IJ.error("Only .nd2 files are supported.")
+    exit()
+
 # Split channels
 split = ChannelSplitter.split(imp)
 
@@ -36,6 +42,10 @@ composite = CompositeImage(merged, CompositeImage.COMPOSITE)
 for i, ch in enumerate(reordered):
     composite.setChannelLut(ch.getProcessor().getLut(), i + 1)
 
+# Copy calibration for later scale bar information
+cal = imp.getCalibration().copy()
+composite.setCalibration(cal)
+
 composite.show()
 
 # Get the full path to the current image
@@ -58,4 +68,3 @@ output_path = os.path.join(output_dir, original_name + ".tif")
 
 # Save the final composite image
 IJ.saveAsTiff(composite, output_path)
-
