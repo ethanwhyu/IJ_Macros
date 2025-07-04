@@ -7,8 +7,6 @@ import math
 import os
 
 def AddScaleDynamically (imp = IJ.getImage()):
-    # Get the currently active image
-    imp = IJ.getImage()
 
     # Get calibration info
     cal = imp.getCalibration()
@@ -37,16 +35,10 @@ def AddScaleDynamically (imp = IJ.getImage()):
         "width=" + str(selected_um) +
         " height=" + str(bar_thickness_px) +
         " font=" + str(font_size) +
-        " color=White background=None location=[Lower Right] bold")
+        " color=White background=None location=[Lower Right] bold draw")
+    
+    return
 
-    # Get original file path
-    original_path = imp.getOriginalFileInfo().directory + imp.getOriginalFileInfo().fileName
-
-    # Construct new path (overwrite or save new)
-    output_path = original_path  # This will overwrite the original
-
-    # Save as TIFF
-    IJ.saveAs(imp, "Tiff", output_path)
 
 def SavetoRGB (imp = IJ.getImage()):    
 
